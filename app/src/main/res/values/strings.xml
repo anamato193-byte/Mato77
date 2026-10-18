@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">حارس التطبيقات الذكي</string>
+    <string name="a11y_desc">يراقب فتح التطبيقات لقفل غير المسموح بها، ويحمي هذا التطبيق من الحذف وإيقاف الحماية.</string>
+    <string name="admin_disable_warning">تعطيل صلاحية المسؤول يسمح بحذف التطبيق. لن يتم السماح بذلك إلا بعد التحقق من بصمتك أو رمز قفل الهاتف.</string>
+    <string name="admin_explain">تفعيل هذه الصلاحية يمنع حذف التطبيق أو إلغاء تثبيته بدون بصمتك أو رمز قفل الهاتف.</string>
+    <string name="auth_title">تأكيد الهوية</string>
+    <string name="auth_owner_sub">استخدم بصمتك أو رمز قفل الهاتف</string>
+    <string name="lock_sub">هذا التطبيق مقفل. تحقق ببصمتك أو رمز قفل الهاتف للمتابعة</string>
+    <string name="unlock">فتح القفل</string>
+    <string name="go_home">العودة للشاشة الرئيسية</string>
+</resources>
