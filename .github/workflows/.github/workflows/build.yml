@@ -1,38 +1,46 @@
-# حارس التطبيقات الذكي (Smart App Locker)
+name: Build APK
 
-تطبيق أندرويد (Kotlin + Jetpack Compose) يقفل كل تطبيقات الهاتف تلقائيًا ويسمح فقط بالتطبيقات التي تختارها (قائمة بيضاء)،
-ويعتمد حصريًا على بصمة الهاتف أو رمز قفل الشاشة الحالي، مع حماية من الحذف.
+on:
+  push:
+  workflow_dispatch:
 
-## طريقة الحصول على ملف APK
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-### الطريقة 1 — GitHub (بدون تثبيت أي برنامج، من الموبايل أو الكمبيوتر)
-1. أنشئ مستودعًا (Repository) جديدًا على github.com.
-2. ارفع كل محتويات هذا المجلد (مهم: يشمل مجلد `.github`).
-   إذا لم يظهر `.github` عند الرفع: من GitHub اختر Add file ← Create new file، اكتب الاسم
-   `.github/workflows/build.yml` والصق محتوى الملف الموجود في المشروع.
-3. افتح تبويب **Actions** ← **Build APK** ← **Run workflow** (أو ينتج تلقائيًا بعد الرفع).
-4. بعد حوالي 5 دقائق افتح التشغيل الناجح ونزّل **SmartAppLocker-APK** من قسم Artifacts، فك الضغط ثم ثبّت `app-release.apk`.
+      - name: Locate project folder
+        id: find
+        run: |
+          F=$(find . -name settings.gradle.kts | head -n 1)
+          if [ -z "$F" ]; then
+            echo "settings.gradle.kts not found. Files in repo:"
+            find . -maxdepth 3 -not -path "./.git/*" | head -50
+            exit 1
+          fi
+          D=$(dirname "$F")
+          echo "dir=$D" >> "$GITHUB_OUTPUT"
 
-### الطريقة 2 — Android Studio
-افتح المجلد في Android Studio ← Build ← Build APK(s).
-الملف الناتج: `app/build/outputs/apk/release/app-release.apk`
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
 
-## التفعيل على الهاتف (مرة واحدة)
-1. ثبّت الـ APK (اسمح بالتثبيت من مصادر غير معروفة).
-2. فعّل قفل شاشة أو بصمة للهاتف من إعدادات الأمان (شرط أساسي).
-3. من تبويب «الحماية»: فعّل **صلاحية مسؤول الجهاز** ثم **خدمة المراقبة**.
-   أندرويد 13+: معلومات التطبيق ← ⋮ ← «السماح بالإعدادات المقيّدة» قبل تفعيل الخدمة.
-4. من تبويب «تحديد البرامج» اختر التطبيقات المسموحة (الاتصال والرسائل والكاميرا مضافة تلقائيًا).
-5. على بعض الأجهزة (شاومي/هواوي/سامسونج): اسمح للتطبيق بالعمل في الخلفية وبدون توفير بطارية، وثبّته في قائمة التطبيقات الحديثة.
+      - name: Accept Android SDK licenses
+        run: |
+          set +o pipefail
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
 
-## الميزات
-- قفل عكسي: كل شيء مقفل ما عدا القائمة البيضاء، والمسموح يفتح فورًا بدون بصمة.
-- بصمة الهاتف / رمز قفل الشاشة فقط (BiometricPrompt) — بدون أي رمز خاص بالتطبيق.
-- زر دائري مضيء في الرئيسية: نافذة وصول سريع + تشغيل/إيقاف القفل الشامل (بالبصمة).
-- حماية من الحذف: Device Admin + مراقبة الإعدادات وشاشات الحذف (محمية دائمًا ولا تُضاف للقائمة البيضاء).
-- إضافات: مهلة إعادة القفل (فورًا / 30ث / دقيقة / 5د)، إعادة القفل عند إطفاء الشاشة،
-  سجل المحاولات الفاشلة، قائمة بيضاء مبدئية تلقائية، شاشة تشغيل سريع بعلامات ✅/🔒،
-  بحث وفلاتر، جلسة مالك لمدة دقيقتين لتجنب تكرار البصمة، وفتح تلقائي لو لا يوجد قفل شاشة حتى لا تُحبس خارج هاتفك.
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
 
-## حدود معروفة
-حماية عدم الحذف تمنع الحذف العادي فقط؛ لا يمكن منع الحذف عبر وضع الأمان أو ADB أو ضبط المصنع.
+      - name: Build release APK
+        working-directory: ${{ steps.find.outputs.dir }}
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartAppLocker-APK
+          path: ${{ steps.find.outputs.dir }}/app/build/outputs/apk/release/*.apk
